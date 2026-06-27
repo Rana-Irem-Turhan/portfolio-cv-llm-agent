@@ -42,6 +42,18 @@ Copy the example environment file and add your API key if using OpenAI embedding
 copy .env.example .env
 ```
 
+For Gemini embeddings, keep your real key local only. You can either put it in `.env` or set it in the current PowerShell session:
+
+```powershell
+$env:GEMINI_API_KEY="your-real-key"
+$env:CV_AGENT_EMBEDDING_PROVIDER="gemini"
+$env:CV_AGENT_GOOGLE_EMBEDDING_MODEL="gemini-embedding-001"
+```
+
+You can also use `GOOGLE_API_KEY` instead of `GEMINI_API_KEY`.
+
+Important: ChromaDB vectors from different embedding providers or models are not compatible. If you switch between OpenAI, Hugging Face, and Gemini, delete and rebuild `data/chroma/` before generating CVs.
+
 ## Ingest CVs And Portfolio Sources
 
 ```bash
@@ -56,11 +68,26 @@ python scripts/ingest_cv.py "C:\path\to\cv1.pdf" "C:\path\to\cv2.pdf" --portfoli
 
 The generator reads from the same ChromaDB location configured during ingestion. By default both commands use `./data/chroma`; if you pass `--vector-db-dir` or `--embedding-provider` during ingestion, use the same values during generation.
 
+Gemini example:
+
+```powershell
+$env:GEMINI_API_KEY="your-real-key"
+$env:CV_AGENT_EMBEDDING_PROVIDER="gemini"
+$env:CV_AGENT_GOOGLE_EMBEDDING_MODEL="gemini-embedding-001"
+python scripts/ingest_cv.py "C:\path\to\cv.pdf" --portfolio-path "C:\path\to\portfolio"
+```
+
 ## Generate A Markdown CV
 
 After ingesting CV and portfolio sources into ChromaDB, generate an evidence-grounded Markdown CV from a job posting:
 
 ```bash
+python scripts/generate_cv.py --job-posting data/job_postings/example_data_engineer.txt --output output/custom_cv.md
+```
+
+With Gemini, use the same terminal environment and the same embedding model used during ingestion:
+
+```powershell
 python scripts/generate_cv.py --job-posting data/job_postings/example_data_engineer.txt --output output/custom_cv.md
 ```
 

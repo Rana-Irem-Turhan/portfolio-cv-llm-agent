@@ -22,6 +22,7 @@ class IngestionConfig:
     embedding_provider: str = "openai"
     openai_embedding_model: str = "text-embedding-3-small"
     huggingface_embedding_model: str = "BAAI/bge-small-en-v1.5"
+    google_embedding_model: str = "gemini-embedding-001"
 
     # Chunking strategy:
     # 900 characters is small enough that a single chunk usually captures one
@@ -66,5 +67,9 @@ class IngestionConfig:
             huggingface_embedding_model=os.getenv(
                 "CV_AGENT_HF_EMBEDDING_MODEL",
                 "BAAI/bge-small-en-v1.5",
+            ),
+            google_embedding_model=os.getenv(
+                "CV_AGENT_GOOGLE_EMBEDDING_MODEL",
+                "gemini-embedding-001",
             ),
         )

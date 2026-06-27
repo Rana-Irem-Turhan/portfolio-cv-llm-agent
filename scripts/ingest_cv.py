@@ -29,7 +29,7 @@ def parse_args() -> argparse.Namespace:
     )
     parser.add_argument(
         "--embedding-provider",
-        choices=["openai", "huggingface"],
+        choices=["openai", "huggingface", "gemini"],
         default=None,
         help="Override the embedding provider from .env.",
     )
@@ -55,6 +55,7 @@ def main() -> None:
             embedding_provider=args.embedding_provider,
             openai_embedding_model=config.openai_embedding_model,
             huggingface_embedding_model=config.huggingface_embedding_model,
+            google_embedding_model=config.google_embedding_model,
             chunk_size=config.chunk_size,
             chunk_overlap=config.chunk_overlap,
             retrieval_k=config.retrieval_k,
@@ -69,6 +70,7 @@ def main() -> None:
             embedding_provider=config.embedding_provider,
             openai_embedding_model=config.openai_embedding_model,
             huggingface_embedding_model=config.huggingface_embedding_model,
+            google_embedding_model=config.google_embedding_model,
             chunk_size=config.chunk_size,
             chunk_overlap=config.chunk_overlap,
             retrieval_k=config.retrieval_k,
