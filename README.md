@@ -57,3 +57,5 @@ python scripts/ingest_cv.py "C:\path\to\cv1.pdf" "C:\path\to\cv2.pdf" --portfoli
 ## Status
 
 This repository currently contains the ingestion and retrieval foundation. The next planned layer is job-posting analysis, CV content planning, two-page PDF generation, and output validation.
+
+See [docs/ROADMAP.md](docs/ROADMAP.md) for the product vision, architecture, hallucination-control strategy, and phased implementation plan.
