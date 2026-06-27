@@ -54,6 +54,8 @@ Multiple CVs and portfolio paths are supported:
 python scripts/ingest_cv.py "C:\path\to\cv1.pdf" "C:\path\to\cv2.pdf" --portfolio-path "C:\path\to\portfolio"
 ```
 
+The generator reads from the same ChromaDB location configured during ingestion. By default both commands use `./data/chroma`; if you pass `--vector-db-dir` or `--embedding-provider` during ingestion, use the same values during generation.
+
 ## Generate A Markdown CV
 
 After ingesting CV and portfolio sources into ChromaDB, generate an evidence-grounded Markdown CV from a job posting:

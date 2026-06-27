@@ -57,6 +57,9 @@ def main() -> None:
             huggingface_embedding_model=config.huggingface_embedding_model,
             chunk_size=config.chunk_size,
             chunk_overlap=config.chunk_overlap,
+            retrieval_k=config.retrieval_k,
+            retrieval_fetch_k=config.retrieval_fetch_k,
+            retrieval_lambda_mult=config.retrieval_lambda_mult,
         )
 
     if args.vector_db_dir:
@@ -68,6 +71,9 @@ def main() -> None:
             huggingface_embedding_model=config.huggingface_embedding_model,
             chunk_size=config.chunk_size,
             chunk_overlap=config.chunk_overlap,
+            retrieval_k=config.retrieval_k,
+            retrieval_fetch_k=config.retrieval_fetch_k,
+            retrieval_lambda_mult=config.retrieval_lambda_mult,
         )
 
     if not args.pdf_paths and not args.portfolio_path:
