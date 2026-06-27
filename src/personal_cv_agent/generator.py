@@ -113,7 +113,11 @@ class MarkdownCVGenerator:
         job_terms = tuple(term.lower() for term in evidence_pack.job.keywords + evidence_pack.job.must_have_skills)
         bullets = self._sentences_matching(items, job_terms)
         if not bullets:
-            bullets = [self._shorten(item.content) for item in items]
+            bullets = [
+                self._shorten(item.content)
+                for item in items
+                if self._is_cv_safe_sentence(item.content)
+            ]
 
         return self._format_bullets(bullets[:max_bullets]) or ["- Relevant evidence was retrieved but needs manual review."]
 
@@ -121,6 +125,8 @@ class MarkdownCVGenerator:
         bullets: list[str] = []
         for item in items:
             for sentence in self._split_sentences(item.content):
+                if not self._is_cv_safe_sentence(sentence):
+                    continue
                 lowered = sentence.lower()
                 if any(term and term in lowered for term in terms):
                     bullets.append(self._shorten(sentence))
@@ -129,18 +135,61 @@ class MarkdownCVGenerator:
         return self._dedupe(bullets)
 
     def _split_sentences(self, text: str) -> list[str]:
-        normalized = text.replace(" - ", ". ").replace(" – ", ". ")
+        normalized = self._normalize_text_artifacts(text)
+        normalized = normalized.replace(" - ", ". ").replace(" -- ", ". ")
         parts = re.split(r"(?<=[.!?])\s+|\s+-\s+", normalized)
-        return [part.strip(" -•") for part in parts if len(part.strip()) >= 35]
+        return [part.strip(" -\u2022") for part in parts if len(part.strip()) >= 35]
 
     def _format_bullets(self, bullets: list[str]) -> list[str]:
         return [f"- {bullet}" for bullet in self._dedupe(bullets) if bullet]
 
     def _shorten(self, text: str, limit: int = 220) -> str:
-        cleaned = " ".join(text.split()).strip(" -•")
+        cleaned = " ".join(self._normalize_text_artifacts(text).split()).strip(" -\u2022")
         if len(cleaned) <= limit:
             return cleaned
         return cleaned[: limit - 3].rsplit(" ", 1)[0] + "..."
+
+    def _is_cv_safe_sentence(self, sentence: str) -> bool:
+        lowered = sentence.lower()
+        blocked_fragments = (
+            "const ",
+            "export ",
+            "classname",
+            "href=",
+            "view certificate",
+            "download cv",
+            "interactive demo",
+            "github repository",
+            "window.",
+            "function ",
+            "return ",
+            "=>",
+        )
+        if any(fragment in lowered for fragment in blocked_fragments):
+            return False
+        if any(token in sentence for token in ("{", "}", "[", "]", "</", "/>")):
+            return False
+        if any(token in sentence for token in ("\u00e2", "\u00f0", "\ufffd")):
+            return False
+        if sentence.count(":") >= 4:
+            return False
+        return True
+
+    def _normalize_text_artifacts(self, text: str) -> str:
+        replacements = {
+            "\u2013": "-",
+            "\u2014": "-",
+            "\u2022": "-",
+            "\u201c": '"',
+            "\u201d": '"',
+            "\u2018": "'",
+            "\u2019": "'",
+            "\u00b7": "-",
+            "\u00c2": "",
+        }
+        for old, new in replacements.items():
+            text = text.replace(old, new)
+        return re.sub(r"[\u00e2\u00f0][^\s]{0,12}", " ", text)
 
     def _extract_name(self, evidence_text: str) -> str:
         match = re.search(r"\bRana\s+Irem\s+Turhan\b", evidence_text, flags=re.IGNORECASE)

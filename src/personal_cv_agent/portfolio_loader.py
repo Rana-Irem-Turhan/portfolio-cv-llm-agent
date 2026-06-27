@@ -5,8 +5,6 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from langchain_core.documents import Document
-
 
 class PortfolioSourceLoader:
     """Load portfolio source files as first-class CV knowledge documents."""
@@ -18,6 +16,8 @@ class PortfolioSourceLoader:
     }
 
     def load(self, portfolio_path: Path) -> list[Document]:
+        from langchain_core.documents import Document
+
         portfolio_path = portfolio_path.expanduser().resolve()
 
         if not portfolio_path.exists():
@@ -65,7 +65,7 @@ class PortfolioSourceLoader:
 
     @staticmethod
     def _clean_source_text(text: str, suffix: str) -> str:
-        text = text.replace("\x00", " ")
+        text = PortfolioSourceLoader._normalize_text_artifacts(text.replace("\x00", " "))
 
         if suffix == ".html":
             text = re.sub(r"(?is)<script.*?</script>", " ", text)
@@ -73,12 +73,54 @@ class PortfolioSourceLoader:
             text = re.sub(r"(?s)<[^>]+>", " ", text)
 
         if suffix == ".ts":
-            text = re.sub(r"^\s*export\s+", "", text, flags=re.MULTILINE)
-            text = re.sub(r"\btype\s+\w+\s*=\s*\{.*?\};", " ", text, flags=re.DOTALL)
+            text = PortfolioSourceLoader._clean_typescript_text(text)
 
-        text = text.replace("–", "-").replace("—", "-")
-        text = text.replace("•", "-")
+        text = PortfolioSourceLoader._normalize_text_artifacts(text)
         text = re.sub(r"[ \t]+", " ", text)
         text = re.sub(r"\n{3,}", "\n\n", text)
         text = "\n".join(line.strip() for line in text.splitlines())
         return text.strip()
+
+    @staticmethod
+    def _clean_typescript_text(text: str) -> str:
+        text = re.sub(r"\bexport\s+type\s+\w+\s*=\s*\{.*?\};", " ", text, flags=re.DOTALL)
+        text = re.sub(
+            r"^\s*export\s+const\s+(\w+).*?=\s*",
+            lambda match: f"\n{match.group(1).replace('_', ' ')}\n",
+            text,
+            flags=re.MULTILINE,
+        )
+        text = re.sub(
+            r"\b(isPrivate|repoUrl|demoUrl|caseStudyUrl|slidesUrl|paperUrl|certificateUrl)\s*:",
+            " ",
+            text,
+        )
+        text = re.sub(r"[{}\[\];]", " ", text)
+        text = text.replace('"', " ").replace("'", " ").replace(",", "\n")
+        text = re.sub(
+            r"\b(id|title|role|company|date|description|tech|category|problem|approach|outcome|issuer|status)\s*:",
+            r"\1: ",
+            text,
+        )
+        text = re.sub(r"\bconst\s+\w+.*", " ", text)
+        return text
+
+    @staticmethod
+    def _normalize_text_artifacts(text: str) -> str:
+        replacements = {
+            "\u2013": "-",
+            "\u2014": "-",
+            "\u2022": "-",
+            "\u201c": '"',
+            "\u201d": '"',
+            "\u2018": "'",
+            "\u2019": "'",
+            "\u00b7": "-",
+            "\u00c2": "",
+        }
+        for old, new in replacements.items():
+            text = text.replace(old, new)
+
+        # Drop common mojibake fragments from copied portfolio HTML.
+        text = re.sub(r"[\u00e2\u00f0][^\s]{0,12}", " ", text)
+        return text

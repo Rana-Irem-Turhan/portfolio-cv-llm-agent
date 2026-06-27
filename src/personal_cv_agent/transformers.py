@@ -11,13 +11,7 @@ from personal_cv_agent.config import IngestionConfig
 
 
 class CVDenseTextTransformer:
-    """Prepare dense CV text for retrieval.
-
-    CVs are compact, sectioned documents. The transformer keeps paragraphs and
-    bullets together where possible, then falls back to smaller separators only
-    when needed. This mirrors robust ETL design: clean the source, keep source
-    lineage in metadata, and preserve business meaning during normalization.
-    """
+    """Prepare dense CV text for retrieval."""
 
     def __init__(self, config: IngestionConfig) -> None:
         self.config = config
@@ -27,8 +21,8 @@ class CVDenseTextTransformer:
             separators=[
                 "\n\n",
                 "\n- ",
-                "\n• ",
-                "\n– ",
+                "\n\u2022 ",
+                "\n\u2013 ",
                 "\n* ",
                 "\n",
                 ". ",
@@ -60,10 +54,8 @@ class CVDenseTextTransformer:
     def _clean_document(document: Document) -> Document:
         """Normalize whitespace while preserving line-based CV structure."""
 
-        text = document.page_content
-        text = text.replace("\x00", " ")
-        text = text.replace("–", "-").replace("—", "-")
-        text = text.replace("•", "-")
+        text = document.page_content.replace("\x00", " ")
+        text = CVDenseTextTransformer._normalize_text_artifacts(text)
         text = re.sub(r"[ \t]+", " ", text)
         text = re.sub(r"\n{3,}", "\n\n", text)
         text = "\n".join(line.strip() for line in text.splitlines())
@@ -72,6 +64,24 @@ class CVDenseTextTransformer:
             page_content=text.strip(),
             metadata=dict(document.metadata),
         )
+
+    @staticmethod
+    def _normalize_text_artifacts(text: str) -> str:
+        replacements = {
+            "\u2013": "-",
+            "\u2014": "-",
+            "\u2022": "-",
+            "\u201c": '"',
+            "\u201d": '"',
+            "\u2018": "'",
+            "\u2019": "'",
+            "\u00b7": "-",
+            "\u00c2": "",
+        }
+        for old, new in replacements.items():
+            text = text.replace(old, new)
+        text = re.sub(r"[\u00e2\u00f0][^\s]{0,12}", " ", text)
+        return text
 
     @staticmethod
     def _infer_section(text: str) -> str:
