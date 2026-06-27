@@ -1,0 +1,28 @@
+[build-system]
+requires = ["setuptools>=69", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "personal-cv-agent"
+version = "0.1.0"
+description = "RAG ingestion foundation for a personalized CV agent."
+requires-python = ">=3.10"
+dependencies = [
+    "chromadb>=0.5.0",
+    "langchain>=0.2.0",
+    "langchain-chroma>=0.1.0",
+    "langchain-community>=0.2.0",
+    "langchain-openai>=0.1.0",
+    "langchain-text-splitters>=0.2.0",
+    "pypdf>=4.0.0",
+    "python-dotenv>=1.0.0",
+]
+
+[project.optional-dependencies]
+open-source-embeddings = [
+    "langchain-huggingface>=0.0.3",
+    "sentence-transformers>=3.0.0",
+]
+
+[tool.setuptools.packages.find]
+where = ["src"]
