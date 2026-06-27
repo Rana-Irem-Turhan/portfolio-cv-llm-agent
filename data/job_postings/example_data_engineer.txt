@@ -1,0 +1,24 @@
+Data Engineer Intern
+
+We are looking for a Data Engineer Intern to support analytics and data platform projects. The role involves building and validating ETL pipelines, writing SQL queries, improving data quality checks, and supporting data warehouse models for reporting and business intelligence.
+
+Responsibilities:
+- Develop and maintain SQL-based data transformations.
+- Support ETL pipeline validation and data reconciliation.
+- Work with PostgreSQL or similar relational databases.
+- Collaborate with analytics and BI teams to ensure reliable reporting.
+- Document data quality issues and communicate findings clearly.
+
+Required skills:
+- SQL
+- Python
+- ETL pipelines
+- Data warehousing
+- PostgreSQL
+- Data quality validation
+
+Nice to have:
+- AWS
+- Power BI
+- Git
+- Agile collaboration

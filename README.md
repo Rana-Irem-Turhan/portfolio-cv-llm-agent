@@ -54,8 +54,25 @@ Multiple CVs and portfolio paths are supported:
 python scripts/ingest_cv.py "C:\path\to\cv1.pdf" "C:\path\to\cv2.pdf" --portfolio-path "C:\path\to\portfolio"
 ```
 
+## Generate A Markdown CV
+
+After ingesting CV and portfolio sources into ChromaDB, generate an evidence-grounded Markdown CV from a job posting:
+
+```bash
+python scripts/generate_cv.py --job-posting data/job_postings/example_data_engineer.txt --output output/custom_cv.md
+```
+
+Useful options:
+
+```bash
+python scripts/generate_cv.py --job-posting data/job_postings/example_data_engineer.txt --output output/custom_cv.md --include-evidence-ids
+python scripts/generate_cv.py --job-posting data/job_postings/example_data_engineer.txt --output output/custom_cv.md --strict
+```
+
+If the command says no ChromaDB knowledge base was found, run `scripts/ingest_cv.py` first with your local CV and portfolio sources. Do not commit private CV PDFs, generated CVs, `.env`, or `data/chroma/` to GitHub.
+
 ## Status
 
-This repository currently contains the ingestion and retrieval foundation. The next planned layer is job-posting analysis, CV content planning, two-page PDF generation, and output validation.
+This repository currently contains the ingestion and retrieval foundation plus the first job-aware Markdown CV generator. The next planned layer is stronger hallucination validation, better content planning, two-page compression, and PDF generation.
 
 See [docs/ROADMAP.md](docs/ROADMAP.md) for the product vision, architecture, hallucination-control strategy, and phased implementation plan.
