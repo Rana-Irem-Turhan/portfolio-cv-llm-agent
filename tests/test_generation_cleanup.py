@@ -25,6 +25,24 @@ class GenerationCleanupTests(unittest.TestCase):
         self.assertNotIn("Experience[]", markdown)
         self.assertIn("source-to-target reconciliation", markdown)
 
+    def test_generator_professionalizes_messy_evidence(self):
+        pack = self._pack(
+            [
+                "Computer Vision & Geospatial AI:OpenCV, ResNet, VGG, EfficientNet, Satellite Imagery Analysis",
+                "Expected to work on project-based AI development involving prompt engineering.",
+            ]
+        )
+        plan = CVPlan(
+            target_title="ML Engineer Intern",
+            summary_angle="machine learning and computer vision",
+            skill_groups=["OpenCV"],
+        )
+
+        markdown = MarkdownCVGenerator().generate(plan, pack).markdown
+
+        self.assertIn("Supported geospatial computer vision workflows", markdown)
+        self.assertNotIn("Expected to work", markdown)
+
     def test_portfolio_loader_cleans_typescript_source_syntax(self):
         raw = 'export const experiences: Experience[] = [{ id: "epam", role: "Data Analytics Engineering Intern", company: "EPAM Systems" }];'
 

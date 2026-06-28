@@ -50,7 +50,7 @@ def parse_args() -> argparse.Namespace:
     parser.add_argument(
         "--strict",
         action="store_true",
-        help="Fail without writing output if validation reports errors.",
+        help="Deprecated: validation errors always reject the final output.",
     )
     parser.add_argument(
         "--include-evidence-ids",
@@ -111,11 +111,18 @@ def main() -> None:
         ).generate(plan, evidence_pack)
         report = BasicCVValidator().validate(markdown_cv, evidence_pack)
 
-        if args.strict and not report.passed:
-            print_validation_report(report)
-            raise SystemExit("Validation failed in strict mode. Output was not written.")
-
         output_path = args.output.expanduser().resolve()
+
+        if not report.passed:
+            print_validation_report(report)
+            invalid_path = output_path.with_suffix(f".invalid{output_path.suffix or '.md'}")
+            invalid_path.parent.mkdir(parents=True, exist_ok=True)
+            invalid_path.write_text(markdown_cv.markdown, encoding="utf-8")
+            raise SystemExit(
+                "Markdown CV validation failed. "
+                f"Rejected draft saved for debugging: {invalid_path}"
+            )
+
         output_path.parent.mkdir(parents=True, exist_ok=True)
         output_path.write_text(markdown_cv.markdown, encoding="utf-8")
 

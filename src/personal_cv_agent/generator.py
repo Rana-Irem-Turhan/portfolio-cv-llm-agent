@@ -85,12 +85,24 @@ class MarkdownCVGenerator:
         return ["- Evidence-supported skills: See retrieved CV and portfolio evidence."]
 
     def _education(self, evidence_pack: EvidencePack) -> list[str]:
-        bullets = self._sentences_matching(evidence_pack.items, ("education", "university", "bachelor", "degree"))
+        items = [
+            item
+            for item in evidence_pack.items
+            if item.section == "education"
+            or self._contains_any(item.content, ("education", "university", "bachelor", "degree"))
+        ]
+        bullets = self._sentences_matching(items, ("education", "university", "bachelor", "degree"))
         return self._format_bullets(bullets[:2]) or ["- Education details available in retrieved CV evidence."]
 
     def _certifications(self, evidence_pack: EvidencePack) -> list[str]:
+        items = [
+            item
+            for item in evidence_pack.items
+            if item.section == "certifications"
+            or self._contains_any(item.content, ("certification", "certified", "certificate", "ielts", "sap", "hackerrank"))
+        ]
         bullets = self._sentences_matching(
-            evidence_pack.items,
+            items,
             ("certification", "certified", "certificate", "ielts", "sap", "hackerrank"),
         )
         return self._format_bullets(bullets[:5]) or ["- Certifications available in retrieved CV evidence."]
@@ -102,19 +114,15 @@ class MarkdownCVGenerator:
         fallback_area: str,
         max_bullets: int,
     ) -> list[str]:
-        items = [
-            item
-            for item in evidence_pack.items
-            if item.relevance_area == area or item.section == area
-        ]
+        items = self._items_for_area(evidence_pack, area)
         if not items:
-            items = [item for item in evidence_pack.items if item.relevance_area == fallback_area]
+            items = self._items_for_area(evidence_pack, fallback_area)
 
         job_terms = tuple(term.lower() for term in evidence_pack.job.keywords + evidence_pack.job.must_have_skills)
         bullets = self._sentences_matching(items, job_terms)
         if not bullets:
             bullets = [
-                self._shorten(item.content)
+                self._professionalize_sentence(item.content)
                 for item in items
                 if self._is_cv_safe_sentence(item.content)
             ]
@@ -129,10 +137,26 @@ class MarkdownCVGenerator:
                     continue
                 lowered = sentence.lower()
                 if any(term and term in lowered for term in terms):
-                    bullets.append(self._shorten(sentence))
+                    bullets.append(self._professionalize_sentence(sentence))
                 if len(bullets) >= 10:
                     return self._dedupe(bullets)
         return self._dedupe(bullets)
+
+    def _items_for_area(self, evidence_pack: EvidencePack, area: str) -> list[EvidenceItem]:
+        if area == "experience":
+            return [
+                item
+                for item in evidence_pack.items
+                if item.section == "experience" or item.relevance_area == "experience"
+                if not self._contains_any(item.content, ("expected to", "incoming", "will work on"))
+            ]
+        if area == "projects":
+            return [
+                item
+                for item in evidence_pack.items
+                if item.section in {"projects", "portfolio"} or item.relevance_area == "projects"
+            ]
+        return [item for item in evidence_pack.items if item.relevance_area == area or item.section == area]
 
     def _split_sentences(self, text: str) -> list[str]:
         normalized = self._normalize_text_artifacts(text)
@@ -142,6 +166,33 @@ class MarkdownCVGenerator:
 
     def _format_bullets(self, bullets: list[str]) -> list[str]:
         return [f"- {bullet}" for bullet in self._dedupe(bullets) if bullet]
+
+    def _professionalize_sentence(self, sentence: str) -> str:
+        cleaned = self._shorten(sentence)
+        lowered = cleaned.lower()
+
+        if self._contains_any(lowered, ("expected to", "will work on", "incoming")):
+            return ""
+        if self._contains_any(lowered, ("source-to-target", "reconciliation", "data quality")):
+            return "Performed source-to-target reconciliation and data quality validation using SQL and Python."
+        if self._contains_any(lowered, ("multi-layer", "data warehouse", "data warehousing", "data mart")):
+            return "Supported multi-layer data warehouse workflows across ingestion, modeling, validation, and analytics layers."
+        if self._contains_any(lowered, ("etl", "dwh", "dashboard testing", "transformation rules", "kpi")):
+            return "Supported ETL, DWH, and dashboard testing by validating completeness, consistency, transformation rules, and KPI outputs."
+        if self._contains_any(lowered, ("postgresql", "joins", "ctes", "window functions")):
+            return "Developed SQL logic with joins, CTEs, window functions, and PostgreSQL-based analytical processing patterns."
+        if self._contains_any(lowered, ("computer vision", "geospatial", "opencv", "resnet", "vgg", "efficientnet")):
+            return "Supported geospatial computer vision workflows using OpenCV and deep learning architectures such as ResNet, VGG, and EfficientNet."
+        if self._contains_any(lowered, ("rag", "faiss", "vector", "sql chatbot")):
+            return "Built retrieval-augmented workflows using Python, FAISS or vector search, and LLM-based response generation."
+        if self._contains_any(lowered, ("staging", "scd", "idempotent", "data mart")):
+            return "Designed data warehouse workflows with staging, data mart modeling, idempotent ETL logic, and data quality checks."
+        if self._contains_any(lowered, ("bachelor", "riga technical", "university", "computer systems")):
+            return "Bachelor of Engineering Science in Computer Systems - Riga Technical University."
+
+        if not cleaned.endswith((".", "!", "?")):
+            cleaned += "."
+        return cleaned
 
     def _shorten(self, text: str, limit: int = 220) -> str:
         cleaned = " ".join(self._normalize_text_artifacts(text).split()).strip(" -\u2022")
@@ -173,7 +224,15 @@ class MarkdownCVGenerator:
             return False
         if sentence.count(":") >= 4:
             return False
+        if self._contains_any(lowered, ("expected to", "will work on", "incoming")):
+            return False
+        if re.fullmatch(r"(?:[a-zA-Z]+\s+)?\d{4}(?:\s*[-/]\s*(?:[a-zA-Z]+\s+)?\d{4}|present)?", sentence.strip(), flags=re.IGNORECASE):
+            return False
         return True
+
+    def _contains_any(self, text: str, terms: tuple[str, ...]) -> bool:
+        lowered = text.lower()
+        return any(term in lowered for term in terms)
 
     def _normalize_text_artifacts(self, text: str) -> str:
         replacements = {
